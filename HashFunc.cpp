@@ -1,5 +1,5 @@
 #include "HashFunc.h"
-// Padding funkcija, kad eilutė būtų pakankamo ilgio
+
 std::string padToLength(const std::string &input, size_t length)
 {
     std::string padded = input;
