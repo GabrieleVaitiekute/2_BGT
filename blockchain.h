@@ -122,7 +122,7 @@ void generateUsers(std::vector<User>& users) {
         return;
     }
 
-    std::cout << "Vartotjai generuojami...\n";
+    std::cout << "Vartotojai generuojami...\n";
     for (int i = 0; i < 1000; ++i) {
         std::string name = "User" + std::to_string(i);
         std::string public_key = "public_key_" + std::to_string(i);
@@ -157,9 +157,7 @@ void generateTransactions( std::vector<User>& users, std::vector<Transaction>& t
 
             
             file << "Transaction ID: " << tx.getTransactionID()<< ", Sender: " << sender.getPublicKey()<< ", Recipient: " << recipient.getPublicKey()<< ", Amount: " << amount << "\n";
-        } else {
-            std::cout << "Transakcija nepavyko: Siuntejui " << sender.getName()<< " nepakanka lesu.\n";
-        }
+        } 
     }
     file.close();
     std::cout << "Transakcijos sugeneruotos ir isvestos faile transakcijos.txt\n";
@@ -167,7 +165,7 @@ void generateTransactions( std::vector<User>& users, std::vector<Transaction>& t
 
 
 
-void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& blockchain) {
+void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& blockchain, std::vector<User>& users) {
     std::ofstream file("blokai.txt");
     if (!file) {
         std::cerr << "Nepavyko atidaryto failo.\n";
@@ -178,8 +176,6 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
     std::mt19937 g(rd());   
 
     std::string user_response;
-    std::cout << "Pradedama bloko generacija...\n";
-
     while (true) {
 
         if (transactions.size() < 100) {
@@ -188,7 +184,7 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         }
 
         
-        std::cout << "Ar norite sugeneruoti bloką? (t/n): ";
+        std::cout << "Ar norite sugeneruoti bloka? (t/n): ";
         std::cin >> user_response;
 
         if (user_response != "t") {
@@ -215,21 +211,43 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
 
         
         file << "Bloko ID: " << newBlock.getBlockID() << ", Buves Hash: " << newBlock.getPreviousHash() 
-             << ", Laikas: " << newBlock.getTimestamp() << ", Nonce: " << newBlock.getNonce() << "\n";
+            << ", Laikas: " << newBlock.getTimestamp() << ", Nonce: " << newBlock.getNonce() << "\n";
         file << "Transakcijos:\n";
         for (const auto& tx : blockTransactions) {
             file << "  Transakcijos ID: " << tx.getTransactionID()
-                 << ", Siuntejas: " << tx.getSender_public_key()
-                 << ", Gavejas: " << tx.getRecipient_public_key()
-                 << ", Kiekis: " << tx.getAmount() << "\n";
+                << ", Siuntejas: " << tx.getSender_public_key()
+                << ", Gavejas: " << tx.getRecipient_public_key()
+                << ", Kiekis: " << tx.getAmount() << "\n";
         }
         file << "----------------------------------\n";
 
-        std::cout << "Blokas " << blockchain.size() << " sugeneratas sėkmingai.\n";
+        std::cout << "Blokas " << blockchain.size() << " sugeneratas sekmingai.\n";
+        
+        // Atnaujinamasvartotojai.txt
+        std::ofstream vartotojuFile("vartotojai.txt");
+        if (vartotojuFile) {
+            for (const auto& user : users) {
+                vartotojuFile << "Vardas: " << user.getName() << ", Viesasis raktas: " << user.getPublicKey()
+                        << ", Likutis: " << user.getBalance() << "\n";
+            }
+            vartotojuFile.close();
+        }
+
+        // Atnaujinamas transakcijos.txt
+        std::ofstream transakcijuFile("transakcijos.txt");
+        if (transakcijuFile) {
+            for (const auto& tx : transactions) {
+                transakcijuFile << "Transakcijos ID: " << tx.getTransactionID()
+                                << ", Siuntejas: " << tx.getSender_public_key()
+                                << ", Gavejas: " << tx.getRecipient_public_key()
+                                << ", Kiekis: " << tx.getAmount() << "\n";
+            }
+            transakcijuFile.close();
+        }
     }
 
     file.close();
-    std::cout << "Sugeneruoti blokai išvesti faile blokai.txt\n";
+    std::cout << "Sugeneruoti blokai isvesti faile blokai.txt\n";
 }
 
 void printTransaction(const std::vector<Transaction>& transactions, const std::string& txID) {

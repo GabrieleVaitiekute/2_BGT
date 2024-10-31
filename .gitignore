@@ -399,3 +399,4 @@ FodyWeavers.xsd
 
 # Ignore all .txt files
 *.txt
+*.exe
