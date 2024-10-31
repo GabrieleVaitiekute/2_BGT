@@ -2,8 +2,8 @@
 ## Naudojimosi intrukcija
 1. Parsisiųskite Zip failą ir jį išarchivuokite
 2. Atidarykite aplankalą norimoje programavimo aplinkoje, pvz.: VS Code
-3. Atvėrę terminalą įveskite: 'g++ main.cpp HashFunc.cpp -o main.exe'  <br> Ši komanda sukurs vykdomąjį failą main.exe
-4. Programą galite paleisti įvesdami šią komandą terminale: './main.exe' arba tiesiog du kartus paspauskite main.exe failą iš aplanko.
+3. Atvėrę terminalą įveskite: `g++ main.cpp HashFunc.cpp -o main.exe`  <br> Ši komanda sukurs vykdomąjį failą main.exe
+4. Programą galite paleisti įvesdami šią komandą terminale: `./main.exe` arba tiesiog du kartus paspauskite main.exe failą iš aplanko.
 5. Programa pradės generuoti vartotojus ir vėliau transakcijas. Duomenys bus automatiškai išsaugoti į vartotojai.txt ir transakcijos.txt failus.
 6. Programa jūsų paklaus, ar norite sukurti bloką:
    * Jei įvesite t, programa sugeneruos bloką naudodama atsitiktines transakcijas ir išsaugos ją į blokai.txt failą. Po sugeneravimo jūsų bus klausiama, ar norite sukurti dar vieną bloką.
