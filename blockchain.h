@@ -194,11 +194,9 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
 
     
         std::shuffle(transactions.begin(), transactions.end(), g);
-
     
         std::vector<Transaction> blockTransactions(transactions.begin(), transactions.begin() + 100);
         
-    
         if (transactions.size() >= 100) {
             transactions.erase(transactions.begin(), transactions.begin() + 100);
         }
@@ -209,7 +207,6 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         newBlock.mineBlock();
         blockchain.push_back(newBlock);
 
-        
         file << "Bloko ID: " << newBlock.getBlockID() << ", Buves Hash: " << newBlock.getPreviousHash() 
             << ", Laikas: " << newBlock.getTimestamp() << ", Nonce: " << newBlock.getNonce() << "\n";
         file << "Transakcijos:\n";
@@ -222,7 +219,7 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         file << "----------------------------------\n";
 
         std::cout << "Blokas " << blockchain.size() << " sugeneratas sekmingai.\n";
-        
+
         // Atnaujinamasvartotojai.txt
         std::ofstream vartotojuFile("vartotojai.txt");
         if (vartotojuFile) {
@@ -263,7 +260,7 @@ void printTransaction(const std::vector<Transaction>& transactions, const std::s
 void printBlock(const std::vector<Block>& blockchain, const std::string& blockID) {
     for (const auto& block : blockchain) {
         if (block.getBlockID() == blockID) {
-            std::cout << "Bloko ID: " << block.getBlockID()<< ", Buves Hash: " << block.getPreviousHash()<< ", Laikas: " << block.getTimestamp()<< ", Nonce: " << block.getNonce() << "\n";
+            std::cout << "Bloko ID: " << block.getBlockID()<< "\nBuves Hash: " << block.getPreviousHash()<< "\nLaikas: " << block.getTimestamp()<< "\nNonce: " << block.getNonce() << "\n";
             for (const auto& tx : block.getTransactions()) {
                 std::cout << "  Transakcijos ID: " << tx.getTransactionID()<< "\nSiuntejas: " << tx.getSender_public_key()<< "\nGavejas: " << tx.getRecipient_public_key()<< "\nKiekis: " << tx.getAmount() << "\n";
             }
