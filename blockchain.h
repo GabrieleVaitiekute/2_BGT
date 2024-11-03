@@ -11,22 +11,42 @@
 #include <algorithm>
 #include <random>
 
+// UTXO struktūra apibrėžia: ID, savininko viešąjį raktą ir vertę
+struct UTXO {
+    std::string utxoID;
+    std::string OwnerPublic_key;
+    unsigned long amount;
+
+    UTXO(const std::string& owner, unsigned long amount) : OwnerPublic_key(owner), amount(amount) {
+        std::stringstream ss;
+        ss << owner << amount;
+        utxoID = hashInput(ss.str());
+    }
+};
 class User {
 private:
     std::string name;
     std::string public_key;
-    unsigned long balance;
+    std::vector<UTXO> utxos; 
 public:
     User() = default;
-    User(std::string name, std::string public_key, unsigned long balance)
-    : name(name), public_key(public_key), balance(balance) {}
-
+    User(std::string name, std::string public_key, unsigned long initialBalance)
+        : name(name), public_key(public_key) {
+        // Sukuriamas pradinis UTXO su nurodytu balansu
+        utxos.push_back(UTXO(public_key, initialBalance));
+    }
     ~User(){}
 
     std::string getName() const { return name; }
     std::string getPublicKey() const { return public_key; }
-    unsigned long getBalance() const { return balance; }
-    void setBalance( unsigned long newBalance) { balance = newBalance; }
+    std::vector<UTXO>& getUTXOs()  { return utxos; }
+    void addUTXO(const UTXO& utxo) { utxos.push_back(utxo); }
+    void removeUTXO(const std::string& utxoID) {
+        // Šalina UTXO pagal jo ID
+        utxos.erase(std::remove_if(utxos.begin(), utxos.end(),
+            [&utxoID](const UTXO& utxo) { return utxo.utxoID == utxoID; }),
+            utxos.end());
+    }
 };
 
 
@@ -35,28 +55,51 @@ private:
     std::string transactionID;
     std::string sender_public_key;
     std::string recipient_public_key;  
-    unsigned long amount;
+    std::vector<UTXO> inputs;   // Transakcijos įėjimai (naudojami UTXOs)
+    std::vector<UTXO> outputs;  // Transakcijos išėjimai (nauji UTXOs)
 
 public:
     Transaction() = default;
-    Transaction(const std::string& sender, const std::string& recipient,  unsigned long amount)
-        : sender_public_key(sender), recipient_public_key(recipient), amount(amount) {
+    Transaction(const std::string& sender, const std::string& recipient, unsigned long amount, std::vector<UTXO>& availableUTXOs)
+        : sender_public_key(sender), recipient_public_key(recipient) {
+
+        // Kaupiamas suma, kurią reikia pervesti
+        unsigned long totalInput = 0;
+        for (const auto& utxo : availableUTXOs) {
+            inputs.push_back(utxo);
+            totalInput += utxo.amount;
+            if (totalInput >= amount) break; // Surenkama pakankama suma
+
+            // Jei trūksta lėšų, įėjimai nesurenkami
+            if (totalInput < amount) throw std::runtime_error("Nepakankamas balansas.");
+        }
+
+        // Sukuriamas gavėjo UTXO su reikiama suma
+        outputs.push_back(UTXO(recipient, amount));
+        
+        // Jei yra likutis, jis grąžinamas kaip "grąžos" UTXO
+        if (totalInput > amount) {
+            unsigned long change = totalInput - amount;
+            outputs.push_back(UTXO(sender, change));
+        }
+
+        // Transakcijos ID generuojamas iš įėjimų ir išėjimų
         transactionID = generateTransactionID();
     }
+
     std::string generateTransactionID() const {
         std::stringstream ss;
-        ss << sender_public_key << recipient_public_key << amount;
-        return hashInput(ss.str()); 
-    }
-    bool validateTransaction(unsigned long senderBalance) const {
-        return senderBalance >= amount;
+        for (const auto& utxo : inputs) ss << utxo.utxoID;
+        for (const auto& utxo : outputs) ss << utxo.utxoID;
+        return hashInput(ss.str());
     }
     ~Transaction() {}
 
-    std::string  getTransactionID() const { return transactionID; }
-    std::string  getSender_public_key() const { return sender_public_key; }
-    std::string  getRecipient_public_key() const { return recipient_public_key; }
-    unsigned long getAmount() const { return amount; }
+   std::string getSenderKey()const { return sender_public_key;}
+    std::string getRecipientKey()const { return recipient_public_key;}
+    std::string getTransactionID() const { return transactionID; }
+    const std::vector<UTXO>& getInputs() const { return inputs; }
+    const std::vector<UTXO>& getOutputs() const { return outputs; }
 
 
 };
@@ -126,44 +169,45 @@ void generateUsers(std::vector<User>& users) {
     for (int i = 0; i < 1000; ++i) {
         std::string name = "User" + std::to_string(i);
         std::string public_key = "public_key_" + std::to_string(i);
-        unsigned long balance = rand() % 1000000 + 100;
-        users.emplace_back(name, public_key, balance);
-        file << "Name: " << name << ", Public Key: " << public_key << ", Balance: " << balance << "\n";
+        unsigned long initialBalance = rand() % 1000000 + 100;
+        users.emplace_back(name, public_key, initialBalance);
+        file << "Name: " << name << ", Public Key: " << public_key << ", Balance: " << initialBalance << "\n";
     }
     file.close();
     std::cout << "Vartotojai sugeneruoti ir isvesti faile vartotojai.txt\n";
 }
 
 
-void generateTransactions( std::vector<User>& users, std::vector<Transaction>& transactions) {
+void generateTransactions(std::vector<User>& users, std::vector<Transaction>& transactions) {
     std::ofstream file("transakcijos.txt");
     if (!file) {
-        std::cerr << "Nepavyko atidaryto failo.\n";
+        std::cerr << "Nepavyko atidaryti failo.\n";
         return;
     }
 
     std::cout << "Transakcijos generuojamos...\n";
     for (int i = 0; i < 10000; ++i) {
-        
         User& sender = users[rand() % users.size()];
-        const User& recipient = users[rand() % users.size()];
+        User& recipient = users[rand() % users.size()];
         unsigned long amount = rand() % 1000 + 1;
 
-        
-        Transaction tx(sender.getPublicKey(), recipient.getPublicKey(), amount);
-        if (tx.validateTransaction(sender.getBalance())) {
-            sender.setBalance(sender.getBalance() - amount);
+        try {
+            Transaction tx(sender.getPublicKey(), recipient.getPublicKey(), amount, sender.getUTXOs());
+            for (const auto& utxo : tx.getInputs()) sender.removeUTXO(utxo.utxoID);
+            for (const auto& utxo : tx.getOutputs()) recipient.addUTXO(utxo);
             transactions.push_back(tx);
 
-            
-            file << "Transaction ID: " << tx.getTransactionID()<< ", Sender: " << sender.getPublicKey()<< ", Recipient: " << recipient.getPublicKey()<< ", Amount: " << amount << "\n";
-        } 
+            file << "Transaction ID: " << tx.getTransactionID()
+                 << ", Sender: " << sender.getPublicKey()
+                 << ", Recipient: " << recipient.getPublicKey()
+                 << ", Amount: " << amount << "\n";
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Transakcija negalima: " << e.what() << "\n";
+        }
     }
     file.close();
     std::cout << "Transakcijos sugeneruotos ir isvestos faile transakcijos.txt\n";
 }
-
-
 
 void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& blockchain, std::vector<User>& users) {
     std::ofstream file("blokai.txt");
@@ -212,9 +256,8 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         file << "Transakcijos:\n";
         for (const auto& tx : blockTransactions) {
             file << "  Transakcijos ID: " << tx.getTransactionID()
-                << ", Siuntejas: " << tx.getSender_public_key()
-                << ", Gavejas: " << tx.getRecipient_public_key()
-                << ", Kiekis: " << tx.getAmount() << "\n";
+                << ", Siuntejas: " << tx.getSenderKey()
+                << ", Gavejas: " << tx.getRecipientKey() << "\n";
         }
         file << "----------------------------------\n";
 
@@ -224,8 +267,7 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         std::ofstream vartotojuFile("vartotojai.txt");
         if (vartotojuFile) {
             for (const auto& user : users) {
-                vartotojuFile << "Vardas: " << user.getName() << ", Viesasis raktas: " << user.getPublicKey()
-                        << ", Likutis: " << user.getBalance() << "\n";
+                vartotojuFile << "Vardas: " << user.getName() << ", Viesasis raktas: " << user.getPublicKey()<< "\n";
             }
             vartotojuFile.close();
         }
@@ -235,9 +277,8 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         if (transakcijuFile) {
             for (const auto& tx : transactions) {
                 transakcijuFile << "Transakcijos ID: " << tx.getTransactionID()
-                                << ", Siuntejas: " << tx.getSender_public_key()
-                                << ", Gavejas: " << tx.getRecipient_public_key()
-                                << ", Kiekis: " << tx.getAmount() << "\n";
+                                << ", Siuntejas: " << tx.getSenderKey()
+                                << ", Gavejas: " << tx.getRecipientKey() << "\n";
             }
             transakcijuFile.close();
         }
@@ -250,7 +291,7 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
 void printTransaction(const std::vector<Transaction>& transactions, const std::string& txID) {
     for (const auto& tx : transactions) {
         if (tx.getTransactionID() == txID) {
-            std::cout << "Transakcijos ID: " << tx.getTransactionID()<< "\nSiuntejas: " << tx.getSender_public_key() << "\nGavejas: " << tx.getRecipient_public_key()<< "\nAmount: " << tx.getAmount() << "\n";
+            std::cout << "Transakcijos ID: " << tx.getTransactionID()<< "\nSiuntejas: " << tx.getSenderKey() << "\nGavejas: " << tx.getRecipientKey()<< "\n";
             return;
         }
     }
@@ -262,7 +303,7 @@ void printBlock(const std::vector<Block>& blockchain, const std::string& blockID
         if (block.getBlockID() == blockID) {
             std::cout << "Bloko ID: " << block.getBlockID()<< "\nBuves Hash: " << block.getPreviousHash()<< "\nLaikas: " << block.getTimestamp()<< "\nNonce: " << block.getNonce() << "\n";
             for (const auto& tx : block.getTransactions()) {
-                std::cout << "  Transakcijos ID: " << tx.getTransactionID()<< "\nSiuntejas: " << tx.getSender_public_key()<< "\nGavejas: " << tx.getRecipient_public_key()<< "\nKiekis: " << tx.getAmount() << "\n";
+                std::cout << "  Transakcijos ID: " << tx.getTransactionID()<< "\nSiuntejas: " << tx.getSenderKey()<< "\nGavejas: " << tx.getRecipientKey()<< "\n";
             }
             return;
         }
