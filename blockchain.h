@@ -90,13 +90,17 @@ public:
         transactionID = generateTransactionID();
     }
 
-    std::string generateTransactionID() const {
+    ~Transaction() {}
+
+    std::string generateTransactionID() const 
+    {
         std::stringstream ss;
         for (const auto& utxo : inputs) ss << utxo.utxoID;
         for (const auto& utxo : outputs) ss << utxo.utxoID;
         return hashInput(ss.str());
     }
-    ~Transaction() {}
+    bool verifyTransactionHash() const {  return generateTransactionID() == transactionID; }
+
 
     std::string getSenderKey()const { return sender_public_key;}
     std::string getRecipientKey()const { return recipient_public_key;}
@@ -118,7 +122,7 @@ private:
     int difficulty = 1;
     std::vector<Transaction> transactions; 
 
- // Helper function to calculate hash with a specific nonce
+
     std::string calculateBlockIDWithNonce(int customNonce) const {
         std::stringstream ss;
         ss << previous_hash << timestamp << version << customNonce << difficulty;
@@ -127,7 +131,28 @@ private:
         }
         return hashInput(ss.str());
     }
+        std::string calculateMerkleRoot() {
+        std::vector<std::string> transactionHashes;
 
+        for (const auto& tx : transactions) {
+            transactionHashes.push_back(tx.getTransactionID()); 
+        }
+
+        while (transactionHashes.size() > 1) {
+            if (transactionHashes.size() % 2 != 0) {
+                transactionHashes.push_back(transactionHashes.back());
+            }
+
+            std::vector<std::string> newLevel;
+            for (size_t i = 0; i < transactionHashes.size(); i += 2) {
+                std::string combinedHash = hashInput(transactionHashes[i] + transactionHashes[i + 1]);
+                newLevel.push_back(combinedHash);
+            }
+            transactionHashes = newLevel;  
+        }
+
+        return transactionHashes.empty() ? "" : transactionHashes[0];
+    }
 public:
     Block(const std::string& prev_hash, const std::vector<Transaction>& txs, int difficulty = 1)
     : previous_hash(prev_hash), transactions(txs), timestamp(time(nullptr)), nonce(0), difficulty(difficulty) {
@@ -165,21 +190,25 @@ public:
         return hashInput(ss.str()); 
     }
 
-     // Parallel mining function with thread count parameter
-    void mineBlockParallel(int threadCount = 4) {
+    
+    void mineBlockParallel(int threadCount = 4) 
+    {
         std::string target(difficulty, '0');
-        std::atomic<bool> found(false);  // Flag to indicate if a valid hash was found
+        std::atomic<bool> found(false); 
         std::string validHash;
         int validNonce = 0;
 
-        // Each thread will handle a separate range of nonces
-        auto mineRange = [&](int startNonce) {
+        
+        auto mineRange = [&](int startNonce) 
+        {
             int localNonce = startNonce;
             std::string localHash;
-            while (!found.load() && localNonce < startNonce + 1000000) {  // Limit nonce range for each thread
+            while (!found.load() && localNonce < startNonce + 1000000) 
+            { 
                 localHash = calculateBlockIDWithNonce(localNonce);
-                if (localHash.substr(0, difficulty) == target) {
-                    found.store(true);  // Signal that the target hash was found
+                if (localHash.substr(0, difficulty) == target) 
+                {
+                    found.store(true);  
                     validHash = localHash;
                     validNonce = localNonce;
                     break;
@@ -188,10 +217,10 @@ public:
             }
         };
 
-        // Launch threads
         std::vector<std::thread> threads;
-        int nonceIncrement = 1000000 / threadCount;  // Adjust range size per thread
-        for (int i = 0; i < threadCount; ++i) {
+        int nonceIncrement = 1000000 / threadCount; 
+        for (int i = 0; i < threadCount; ++i) 
+        {
             threads.emplace_back(mineRange, i * nonceIncrement);
         }
 
@@ -201,7 +230,8 @@ public:
         }
 
         // Update block with valid hash and nonce
-        if (found) {
+        if (found) 
+        {
             blockID = validHash;
             nonce = validNonce;
             std::cout << "Blokas iskastas su hash: " << blockID << "\n";
@@ -290,18 +320,24 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
             break;
         }
 
-        // Randomly select and shuffle transactions for the new block
+        
         std::shuffle(transactions.begin(), transactions.end(), g);
-        std::vector<Transaction> blockTransactions(transactions.begin(), transactions.begin() + 100);
+        std::vector<Transaction> blockTransactions(transactions.begin(), transactions.begin() + 100);;
 
-        // Prepare block with selected transactions
+        for (size_t i = 0; i < 100 && i < transactions.size(); ++i) {
+            const auto& tx = transactions[i];
+            if (tx.verifyTransactionHash()) {  
+                blockTransactions.push_back(tx); 
+            } else {
+                std::cerr << "Klaida: Netinkamas transakcijos hash - " << tx.getTransactionID() << "\n";
+            }
+        }
+
         std::string prev_hash = blockchain.empty() ? "0" : blockchain.back().getBlockID();
         Block newBlock(prev_hash, blockTransactions, 1);  
 
-        // Mine the block (parallel mining)
         newBlock.mineBlockParallel();
 
-        // Step 1: Update UTXOs for each user based on transactions in the mined block
         for (const auto& tx : blockTransactions) {
             for (auto& user : users) {
                 if (user.getPublicKey() == tx.getSenderKey()) {
@@ -319,43 +355,41 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
             }
         }
 
-        // Step 2: Erase transactions that were included in the block
+        // 2: 
         transactions.erase(transactions.begin(), transactions.begin() + 100);
 
-        // Step 3: Add the mined block to the blockchain
+        //3:
         blockchain.push_back(newBlock);
 
-        // Write block details to the file
-        file << "Bloko ID: " << newBlock.getBlockID() << ", Buves Hash: " << newBlock.getPreviousHash() 
-            << ", Laikas: " << newBlock.getFormattedTimestamp() << ", Nonce: " << newBlock.getNonce() << "\n";
-        file << "Transakcijos:\n";
+        // 
+        file << "Block ID: " << newBlock.getBlockID() << ", Previous hash: " << newBlock.getPreviousHash() 
+            << ", Timestamp: " << newBlock.getFormattedTimestamp() << ", Nonce: " << newBlock.getNonce() << "\n";
+        file << "Transactions:\n";
         for (const auto& tx : blockTransactions) {
-            file << "  Transakcijos ID: " << tx.getTransactionID()
-                << ", Siuntejas: " << tx.getSenderKey()
-                << ", Gavejas: " << tx.getRecipientKey() << "\n";
+            file << "  Transaction ID: " << tx.getTransactionID()
+                << ", Sender: " << tx.getSenderKey()
+                << ", Recipient: " << tx.getRecipientKey() << "\n";
         }
         file << "----------------------------------\n";
         std::cout << "Blokas " << blockchain.size() << " sugeneruotas sekmingai.\n";
 
-        // Updating vartotojai.txt to reflect UTXO changes
         std::ofstream vartotojuFile("vartotojai.txt"); 
         if (vartotojuFile) {
             for (auto& user : users) {
-                vartotojuFile << "Vardas: " << user.getName() << ", Viesasis raktas: " << user.getPublicKey() << "\n";
+                vartotojuFile << "Name: " << user.getName() << ", Public key: " << user.getPublicKey() << "\n";
                 for (const auto& utxo : user.getUTXOs()) {
-                    vartotojuFile << "  UTXO ID: " << utxo.utxoID << ", Suma: " << utxo.amount << "\n";
+                    vartotojuFile << "  UTXO ID: " << utxo.utxoID << ", Amount: " << utxo.amount << "\n";
                 }
             }
             vartotojuFile.close();
         }
 
-        // Updating transakcijos.txt with remaining transactions
         std::ofstream transakcijuFile("transakcijos.txt");
         if (transakcijuFile) {
             for (const auto& tx : transactions) {
-                transakcijuFile << "Transakcijos ID: " << tx.getTransactionID()
-                                << ", Siuntejas: " << tx.getSenderKey()
-                                << ", Gavejas: " << tx.getRecipientKey() << "\n";
+                transakcijuFile << "Transaction ID: " << tx.getTransactionID()
+                                << ", Sender: " << tx.getSenderKey()
+                                << ", Recipient: " << tx.getRecipientKey() << "\n";
             }
             transakcijuFile.close();
         }
@@ -367,11 +401,11 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
 void printTransaction(const std::vector<Transaction>& transactions, const std::string& txID) {
     for (const auto& tx : transactions) {
         if (tx.getTransactionID() == txID) {
-            std::cout << "Transakcijos ID: " << tx.getTransactionID() 
-                    << "\nSiuntejas: " << tx.getSenderKey() 
-                    << "\nGavejas: " << tx.getRecipientKey() << "\n";
+            std::cout << "Transaction ID: " << tx.getTransactionID() 
+                    << "\nSender: " << tx.getSenderKey() 
+                    << "\nRecipient: " << tx.getRecipientKey() << "\n";
             unsigned long totalSent = 0;
-            std::cout << "Įėjimai (Inputs):\n";
+            std::cout << "Inputs:\n";
             for (const auto& input : tx.getInputs()) 
             {
                 std::cout << "  UTXO ID: " << input.utxoID << ", Suma: " << input.amount << "\n";
@@ -380,9 +414,9 @@ void printTransaction(const std::vector<Transaction>& transactions, const std::s
             std::cout << "Total Sent: " << totalSent << "\n";
 
             unsigned long totalReceived = 0;
-            std::cout << "Išėjimai (Outputs):\n";
+            std::cout << "Outputs:\n";
             for (const auto& output : tx.getOutputs()) {
-                std::cout << "  UTXO ID: " << output.utxoID << ", Suma: " << output.amount << "\n";
+                std::cout << "  UTXO ID: " << output.utxoID << ", Amount: " << output.amount << "\n";
                 totalReceived += output.amount;
             }
             std::cout << "Total Received: " << totalReceived << "\n";
@@ -395,14 +429,14 @@ void printTransaction(const std::vector<Transaction>& transactions, const std::s
 void printBlock(const std::vector<Block>& blockchain, const std::string& blockID) {
     for (const auto& block : blockchain) {
         if (block.getBlockID() == blockID) {
-            std::cout << "Bloko ID: " << block.getBlockID() 
-                    << "\nBuves Hash: " << block.getPreviousHash()
-                    << "\nLaikas: " << block.getFormattedTimestamp() 
+            std::cout << "Block ID: " << block.getBlockID() 
+                    << "\nPrevious hash: " << block.getPreviousHash()
+                    << "\nTimestamp: " << block.getFormattedTimestamp() 
                     << "\nNonce: " << block.getNonce() << "\n";
             for (const auto& tx : block.getTransactions()) {
-                std::cout << "  Transakcijos ID: " << tx.getTransactionID() 
-                        << "\nSiuntejas: " << tx.getSenderKey() 
-                        << "\nGavejas: " << tx.getRecipientKey() << "\n";
+                std::cout << "  Transaction ID: " << tx.getTransactionID() 
+                        << "\nSender: " << tx.getSenderKey() 
+                        << "\nRecipient: " << tx.getRecipientKey() << "\n";
             }
             return;
         }
