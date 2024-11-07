@@ -18,15 +18,15 @@ Tam buvo sukurta klasė User (ją sudaro name, public_key, balance). Klasę gali
 Funkcija  generateUsers() sugeneruoja vartotojus ir išveda juos į failą vartotojai.txt.
 
 ### 2. Transakcijų generaviams
-Buvo sukurta klasė Transaction (ją sudaro transactionID, sender_public_key, recipient_public_key, amount). Klasę galite rasti blockchain.h.
-Funkcija  generateTransactions() sugeneruoja transakcijas (tik tas, kurioms įvykdyti užtenkta siuntėjo lėšų) ir jas išveda į failą transakcijos.txt.
+Buvo sukurta klasė Transaction (ją sudaro transactionID, sender_public_key, recipient_public_key, inputs, outputs) ir struktūra UTXO (utxoID, OwnerPublic_key, amount). Klasę ir struktūrą galite rasti blockchain.h. 
+Funkcija  generateTransactions() sugeneruoja transakcijas (tik tas, kurioms įvykdyti užtenkta siuntėjo lėšų), patikrina jų reikšmės maišas ir jas išveda į failą transakcijos.txt. 
 
 ### 3. Transakcijų įvedimas į naują bloką
-Sukurta klasė Block (sudaryta iš blockID, previous_hash, timestamp, version, nonce, difficulty,  transactions, calculateBlockID(), mineBlock()). Klasę galite rasti blockchain.h.
+Sukurta klasė Block (sudaryta iš blockID, previous_hash, timestamp, version, nonce, difficulty,  transactions, calculateBlockID(), calculateMerkleRoot(), mineBlockParallel() ). Klasę galite rasti blockchain.h.
 Funkcija  generateBlocks() klausia ar naudotojas nori bloką sukurti. Prieš generavimą patikrina, ar yra užtektinai transakcijų (100).
 
 ### 4-6. Blokų kasimas ir transakcijų tvarkymas
-Bloko mineBlock funkcija realizuoja kasimo procesą naudojant Proof-of-Work (PoW) algoritmą. Šis procesas keičia nonce reikšmę tol, kol blockID atitinka reikalaujamą difficulty lygį. Kai tinkamas nonce surandamas ir blokas yra "iškastas", jis įrašomas į blokai.txt failą kartu su transakcijų informacija, ir bloko blockID pridedamas į blockchain sąrašą kaip patvirtintas blokas. Po kiekvieno bloko kasimo ir patvirtinimo, atnaujinamos vartotojų sąskaitos vartotojai.txt faile (įskaitant jų balansus) bei transakcijų sąrašas transakcijos.txt.
+Bloko mineBlock funkcija realizuoja kasimo procesą naudojant Proof-of-Work (PoW) algoritmą. Šis procesas keičia nonce reikšmę tol, kol blockID atitinka reikalaujamą difficulty lygį. Realizuotas lygiagretus blokų kasimo procesas.  Kai tinkamas nonce surandamas ir blokas yra "iškastas", jis įrašomas į blokai.txt failą kartu su transakcijų informacija, ir bloko blockID pridedamas į blockchain sąrašą kaip patvirtintas blokas. Po kiekvieno bloko kasimo ir patvirtinimo, atnaujinamos vartotojų sąskaitos vartotojai.txt faile (įskaitant jų balansus) bei transakcijų sąrašas transakcijos.txt.
 
 Faile naudojamos kelios gerosios OOP praktikos: 
   + Enkapsuliacija (Privatūs atributai ir vieši metodai klasėse)
