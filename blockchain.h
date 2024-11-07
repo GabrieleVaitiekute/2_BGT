@@ -404,25 +404,28 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
 void printTransaction(const std::vector<Transaction>& transactions, const std::string& txID) {
     for (const auto& tx : transactions) {
         if (tx.getTransactionID() == txID) {
-            std::cout << "Transaction ID: " << tx.getTransactionID() 
-                    << "\nSender: " << tx.getSenderKey() 
-                    << "\nRecipient: " << tx.getRecipientKey() << "\n";
+            std::cout << std::left;
+            std::cout << std::setw(20)<< "Transaction ID: " << tx.getTransactionID() 
+                    << std::setw(20)<< "\nSender: " << tx.getSenderKey() 
+                    << std::setw(20)<< "\nRecipient: " << tx.getRecipientKey() << "\n";
             unsigned long totalSent = 0;
-            std::cout << "Inputs:\n";
+            std::cout << std::setw(20)<< "Inputs:\n";
             for (const auto& input : tx.getInputs()) 
             {
-                std::cout << "  UTXO ID: " << input.utxoID << ", Suma: " << input.amount << "\n";
+                std::cout << "  " << std::setw(15) << "UTXO ID:" << input.utxoID
+                        << ", " << std::setw(6) << "Amount:" << input.amount << "\n";
                 totalSent += input.amount;
             }
-            std::cout << "Total Sent: " << totalSent << "\n";
+            std::cout << std::setw(20)<< "Total Sent: " << totalSent << "\n";
 
             unsigned long totalReceived = 0;
-            std::cout << "Outputs:\n";
+            std::cout << std::setw(20)<< "Outputs:\n";
             for (const auto& output : tx.getOutputs()) {
-                std::cout << "  UTXO ID: " << output.utxoID << ", Amount: " << output.amount << "\n";
+                std::cout << "  " << std::setw(15) << "UTXO ID:" << output.utxoID
+                        << ", " << std::setw(6) << "Amount:" << output.amount << "\n";
                 totalReceived += output.amount;
             }
-            std::cout << "Total Received: " << totalReceived << "\n";
+            std::cout<< std::setw(20) << "Total Received: " << totalReceived << "\n";
             return;
         }
     }
@@ -432,16 +435,18 @@ void printTransaction(const std::vector<Transaction>& transactions, const std::s
 void printBlock(const std::vector<Block>& blockchain, const std::string& blockID) {
     for (const auto& block : blockchain) {
         if (block.getBlockID() == blockID) {
-            std::cout << "Block ID: " << block.getBlockID() 
-                    << "\nPrevious hash: " << block.getPreviousHash()
-                    << "\nMerkle Root Hash: " << block.calculateMerkleRoot() 
-                    << "\nTimestamp: " << block.getFormattedTimestamp() 
-                    << "\nNonce: " << block.getNonce()
-                    << "\nDifficulty: " << block.getDifficulty() << "\n" << "\n";
+            std::cout << std::left;
+            std::cout<< std::setw(20) << "Block ID: " << block.getBlockID() 
+                    << std::setw(20)<< "\nPrevious hash: " << block.getPreviousHash()
+                    << std::setw(20)<< "\nMerkle Root Hash: " << block.calculateMerkleRoot() 
+                    << std::setw(20)<< "\nTimestamp: " << block.getFormattedTimestamp() 
+                    << std::setw(20)<< "\nNonce: " << block.getNonce()
+                    << std::setw(20)<< "\nDifficulty: " << block.getDifficulty() << "\n";
+            std::cout << std::setw(20) << "Transactions:" << "\n";
             for (const auto& tx : block.getTransactions()) {
-                std::cout << "  Transaction ID: " << tx.getTransactionID() 
-                        << "\nSender: " << tx.getSenderKey() 
-                        << "\nRecipient: " << tx.getRecipientKey() << "\n";
+                std::cout << "  " << std::setw(15) << "Transaction ID:" << tx.getTransactionID() << "\n"
+                        << "  " << std::setw(15) << "Sender:" << tx.getSenderKey() << "\n"
+                        << "  " << std::setw(15) << "Recipient:" << tx.getRecipientKey() << "\n";
             }
             return;
         }
