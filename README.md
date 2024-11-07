@@ -22,7 +22,7 @@ Buvo sukurta klasė Transaction (ją sudaro transactionID, sender_public_key, re
 Funkcija  generateTransactions() sugeneruoja transakcijas (tik tas, kurioms įvykdyti užtenkta siuntėjo lėšų), patikrina jų reikšmės maišas ir jas išveda į failą transakcijos.txt. 
 
 ### 3. Transakcijų įvedimas į naują bloką
-Sukurta klasė Block (sudaryta iš blockID, previous_hash, timestamp, version, nonce, difficulty, transactions, calculateBlockIDWithNonce(), calculateMerkleRoot(), mineBlockParallel() ). Klasę galite rasti blockchain.h.
+Sukurta klasė Block (sudaryta iš blockID, previous_hash, timestamp, version, nonce, difficulty, transactions, calculateBlockIDWithNonce(), calculateBlockID(), calculateMerkleRoot(), mineBlockParallel() ). Klasę galite rasti blockchain.h.
 Funkcija  generateBlocks() klausia ar naudotojas nori bloką sukurti. Prieš generavimą patikrina, ar yra užtektinai transakcijų (100).
 
 ### 4-6. Blokų kasimas ir transakcijų tvarkymas
