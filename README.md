@@ -14,15 +14,15 @@
    * Jei įvesite bet kokį kitą simbolį programa baigs dirbti.
 ## Užduoties formuluotė
 ### 1. Vartotojų generavimas
-Tam buvo sukurta klasė User (ją sudaro name, public_key, balance). Klasę galite rasti blockchain.h.
+Tam buvo sukurta klasė User (ją sudaro name, public_key, balance, addUTXO(),  removeUTXO()). Klasę galite rasti blockchain.h.
 Funkcija  generateUsers() sugeneruoja vartotojus ir išveda juos į failą vartotojai.txt.
 
 ### 2. Transakcijų generaviams
-Buvo sukurta klasė Transaction (ją sudaro transactionID, sender_public_key, recipient_public_key, inputs, outputs) ir struktūra UTXO (utxoID, OwnerPublic_key, amount). Klasę ir struktūrą galite rasti blockchain.h. 
+Buvo sukurta klasė Transaction (ją sudaro transactionID, sender_public_key, recipient_public_key, inputs, outputs, generateTransactionID(), verifyTransactionHash() ) ir struktūra UTXO (utxoID, OwnerPublic_key, amount). Klasę ir struktūrą galite rasti blockchain.h. 
 Funkcija  generateTransactions() sugeneruoja transakcijas (tik tas, kurioms įvykdyti užtenkta siuntėjo lėšų), patikrina jų reikšmės maišas ir jas išveda į failą transakcijos.txt. 
 
 ### 3. Transakcijų įvedimas į naują bloką
-Sukurta klasė Block (sudaryta iš blockID, previous_hash, timestamp, version, nonce, difficulty,  transactions, calculateBlockID(), calculateMerkleRoot(), mineBlockParallel() ). Klasę galite rasti blockchain.h.
+Sukurta klasė Block (sudaryta iš blockID, previous_hash, timestamp, version, nonce, difficulty, transactions, calculateBlockIDWithNonce(), calculateMerkleRoot(), mineBlockParallel() ). Klasę galite rasti blockchain.h.
 Funkcija  generateBlocks() klausia ar naudotojas nori bloką sukurti. Prieš generavimą patikrina, ar yra užtektinai transakcijų (100).
 
 ### 4-6. Blokų kasimas ir transakcijų tvarkymas
