@@ -405,24 +405,24 @@ void printTransaction(const std::vector<Transaction>& transactions, const std::s
     for (const auto& tx : transactions) {
         if (tx.getTransactionID() == txID) {
             std::cout << std::left;
-            std::cout << std::setw(20)<< "Transaction ID: " << tx.getTransactionID() 
-                    << std::setw(20)<< "\nSender: " << tx.getSenderKey() 
-                    << std::setw(20)<< "\nRecipient: " << tx.getRecipientKey() << "\n";
+            std::cout << std::setw(20)<< "Transaction ID: " << tx.getTransactionID() << "\n" 
+                    << std::setw(20)<< "Sender: " << tx.getSenderKey() << "\n"
+                    << std::setw(20)<< "Recipient: " << tx.getRecipientKey() << "\n";
             unsigned long totalSent = 0;
-            std::cout << std::setw(20)<< "Inputs:\n";
+            std::cout << std::setw(20)<< "Inputs:"<< "\n" ;
             for (const auto& input : tx.getInputs()) 
             {
-                std::cout << "  " << std::setw(15) << "UTXO ID:" << input.utxoID
-                        << ", " << std::setw(6) << "Amount:" << input.amount << "\n";
+                std::cout << std::setw(20) << "UTXO ID:" << input.utxoID << "\n"
+                        << std::setw(20) << "Amount:" << input.amount << "\n";
                 totalSent += input.amount;
             }
             std::cout << std::setw(20)<< "Total Sent: " << totalSent << "\n";
 
             unsigned long totalReceived = 0;
-            std::cout << std::setw(20)<< "Outputs:\n";
+            std::cout << std::setw(20)<< "Outputs:" << "\n";
             for (const auto& output : tx.getOutputs()) {
-                std::cout << "  " << std::setw(15) << "UTXO ID:" << output.utxoID
-                        << ", " << std::setw(6) << "Amount:" << output.amount << "\n";
+                std::cout << std::setw(20) << "UTXO ID:" << output.utxoID << "\n"
+                        << std::setw(20) << "Amount:" << output.amount << "\n";
                 totalReceived += output.amount;
             }
             std::cout<< std::setw(20) << "Total Received: " << totalReceived << "\n";
@@ -436,12 +436,12 @@ void printBlock(const std::vector<Block>& blockchain, const std::string& blockID
     for (const auto& block : blockchain) {
         if (block.getBlockID() == blockID) {
             std::cout << std::left;
-            std::cout<< std::setw(20) << "Block ID: " << block.getBlockID() 
-                    << std::setw(20)<< "\nPrevious hash: " << block.getPreviousHash()
-                    << std::setw(20)<< "\nMerkle Root Hash: " << block.calculateMerkleRoot() 
-                    << std::setw(20)<< "\nTimestamp: " << block.getFormattedTimestamp() 
-                    << std::setw(20)<< "\nNonce: " << block.getNonce()
-                    << std::setw(20)<< "\nDifficulty: " << block.getDifficulty() << "\n";
+            std::cout<< std::setw(20) << "Block ID: " << block.getBlockID() << "\n"
+                    << std::setw(20)<< "Previous hash: " << block.getPreviousHash()<< "\n"
+                    << std::setw(20)<< "Merkle Root Hash: " << block.calculateMerkleRoot() << "\n"
+                    << std::setw(20)<< "Timestamp: " << block.getFormattedTimestamp() << "\n"
+                    << std::setw(20)<< "Nonce: " << block.getNonce()<< "\n"
+                    << std::setw(20)<< "Difficulty: " << block.getDifficulty() << "\n";
             std::cout << std::setw(20) << "Transactions:" << "\n";
             for (const auto& tx : block.getTransactions()) {
                 std::cout << "  " << std::setw(15) << "Transaction ID:" << tx.getTransactionID() << "\n"

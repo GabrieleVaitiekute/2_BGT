@@ -14,7 +14,7 @@ int main() {
    
 
 while (true) {
-    std::cout<<"Ar norite atspausdinti:\n 1.transakijcija\n 2.bloka\nBet kokia kita ivestis baigs programa!\nJusu pasirinkimas: ";
+    std::cout<<"Ar norite atspausdinti:\n 1.transakcija\n 2.bloka\nBet kokia kita ivestis baigs programa!\nJusu pasirinkimas: ";
     int ivestis;
     std::cin >> ivestis;
     if(ivestis == 1)
