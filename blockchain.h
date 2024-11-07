@@ -14,6 +14,9 @@
 #include <atomic>
 #include <functional>
 
+std::random_device rd; 
+std::mt19937 g(rd());   
+
 // UTXO struktūra apibrėžia: ID, savininko viešąjį raktą ir vertę
 struct UTXO {
     std::string utxoID;
@@ -119,7 +122,7 @@ private:
     time_t timestamp; 
     int version = 1;
     int nonce;
-    int difficulty = 1;
+    int difficulty = 0;
     std::vector<Transaction> transactions; 
 
 
@@ -131,30 +134,10 @@ private:
         }
         return hashInput(ss.str());
     }
-        std::string calculateMerkleRoot() {
-        std::vector<std::string> transactionHashes;
 
-        for (const auto& tx : transactions) {
-            transactionHashes.push_back(tx.getTransactionID()); 
-        }
 
-        while (transactionHashes.size() > 1) {
-            if (transactionHashes.size() % 2 != 0) {
-                transactionHashes.push_back(transactionHashes.back());
-            }
-
-            std::vector<std::string> newLevel;
-            for (size_t i = 0; i < transactionHashes.size(); i += 2) {
-                std::string combinedHash = hashInput(transactionHashes[i] + transactionHashes[i + 1]);
-                newLevel.push_back(combinedHash);
-            }
-            transactionHashes = newLevel;  
-        }
-
-        return transactionHashes.empty() ? "" : transactionHashes[0];
-    }
 public:
-    Block(const std::string& prev_hash, const std::vector<Transaction>& txs, int difficulty = 1)
+    Block(const std::string& prev_hash, const std::vector<Transaction>& txs, int difficulty = 0)
     : previous_hash(prev_hash), transactions(txs), timestamp(time(nullptr)), nonce(0), difficulty(difficulty) {
     blockID = calculateBlockID();
 }
@@ -190,7 +173,28 @@ public:
         return hashInput(ss.str()); 
     }
 
-    
+    std::string calculateMerkleRoot() const{
+        std::vector<std::string> transactionHashes;
+
+        for (const auto& tx : transactions) {
+            transactionHashes.push_back(tx.getTransactionID()); 
+        }
+
+        while (transactionHashes.size() > 1) {
+            if (transactionHashes.size() % 2 != 0) {
+                transactionHashes.push_back(transactionHashes.back());
+            }
+
+            std::vector<std::string> newLevel;
+            for (size_t i = 0; i < transactionHashes.size(); i += 2) {
+                std::string combinedHash = hashInput(transactionHashes[i] + transactionHashes[i + 1]);
+                newLevel.push_back(combinedHash);
+            }
+            transactionHashes = newLevel;  
+        }
+
+        return transactionHashes.empty() ? "" : transactionHashes[0];
+    }
     void mineBlockParallel(int threadCount = 4) 
     {
         std::string target(difficulty, '0');
@@ -244,17 +248,23 @@ public:
 
 };
 
+const std::vector<std::string> baseNames = {
+    "Agne","Janina", "Aleksas", "Jonas", "Marius", "Laura", "Ieva", "Tomas", "Gabija", "Karolis", "Ruta", "Justas"
+};
+
 void generateUsers(std::vector<User>& users) {
     std::ofstream file("vartotojai.txt");
     if (!file) {
         std::cerr << "Nepavyko atidaryto failo.\n";
         return;
     }
+    std::uniform_int_distribution<> nameDist(0, baseNames.size() - 1);
+    std::uniform_int_distribution<> numberDist(1, 99);
 
     std::cout << "Vartotojai generuojami...\n";
     for (int i = 0; i < 1000; ++i) {
-        std::string name = "User" + std::to_string(i);
-        std::string public_key = "public_key_" + std::to_string(i);
+        std::string name = baseNames[nameDist(g)] + std::to_string(numberDist(g));
+        std::string public_key = hashInput(name);
         unsigned long initialBalance = rand() % 1000000 + 100;
         users.emplace_back(name, public_key, initialBalance);
         file << "Name: " << name << ", Public Key: " << public_key << ", Balance: " << initialBalance << "\n";
@@ -301,9 +311,6 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
         std::cerr << "Nepavyko atidaryti failo.\n";
         return;
     }
-
-    std::random_device rd; 
-    std::mt19937 g(rd());   
 
     std::string user_response;
     while (true) {
@@ -355,10 +362,8 @@ void generateBlocks(std::vector<Transaction>& transactions, std::vector<Block>& 
             }
         }
 
-        // 2: 
         transactions.erase(transactions.begin(), transactions.begin() + 100);
 
-        //3:
         blockchain.push_back(newBlock);
 
         // 
@@ -431,8 +436,10 @@ void printBlock(const std::vector<Block>& blockchain, const std::string& blockID
         if (block.getBlockID() == blockID) {
             std::cout << "Block ID: " << block.getBlockID() 
                     << "\nPrevious hash: " << block.getPreviousHash()
+                    << "\nMerkle Root Hash: " << block.calculateMerkleRoot() 
                     << "\nTimestamp: " << block.getFormattedTimestamp() 
-                    << "\nNonce: " << block.getNonce() << "\n";
+                    << "\nNonce: " << block.getNonce()
+                    << "\nDifficulty: " << block.getDifficulty() << "\n" << "\n";
             for (const auto& tx : block.getTransactions()) {
                 std::cout << "  Transaction ID: " << tx.getTransactionID() 
                         << "\nSender: " << tx.getSenderKey() 
