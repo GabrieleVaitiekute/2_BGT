@@ -122,7 +122,7 @@ private:
     time_t timestamp; 
     int version = 1;
     int nonce;
-    int difficulty = 0;
+    int difficulty = 1;
     std::vector<Transaction> transactions; 
 
 
@@ -137,7 +137,7 @@ private:
 
 
 public:
-    Block(const std::string& prev_hash, const std::vector<Transaction>& txs, int difficulty = 0)
+    Block(const std::string& prev_hash, const std::vector<Transaction>& txs, int difficulty = 1 )
     : previous_hash(prev_hash), transactions(txs), timestamp(time(nullptr)), nonce(0), difficulty(difficulty) {
     blockID = calculateBlockID();
 }
@@ -217,23 +217,21 @@ public:
                     validNonce = localNonce;
                     break;
                 }
-                ++localNonce;
+                localNonce++;
             }
         };
 
         std::vector<std::thread> threads;
         int nonceIncrement = 1000000 / threadCount; 
-        for (int i = 0; i < threadCount; ++i) 
+        for (int i = 0; i < threadCount; i++) 
         {
             threads.emplace_back(mineRange, i * nonceIncrement);
         }
 
-        // Join threads
         for (auto& t : threads) {
             t.join();
         }
 
-        // Update block with valid hash and nonce
         if (found) 
         {
             blockID = validHash;
